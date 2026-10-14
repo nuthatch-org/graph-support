@@ -71,16 +71,21 @@ export async function POST(req: Request) {
   // A visitor's own key is used for this request only: never logged, never stored.
   const ownKey = req.headers.get("x-anthropic-key")?.trim() || "";
   if (ownKey && !/^sk-ant-[\w-]{20,}$/.test(ownKey)) return reply(400, "That doesn't look like an Anthropic API key.", "key");
+  if (!(await acquire(ip))) return reply(429, "Graphy is still answering your last question.");
+  const refuse = async (status: number, v: string, code?: "rate" | "key" | "full") => {
+    await release(ip);
+    return reply(status, v, code);
+  };
   let quota: Quota | null = null;
   if (ownKey) {
     const limited = await checkByoRate(ip);
-    if (limited) return reply(429, limited);
+    if (limited) return refuse(429, limited);
   } else {
     if (!(await budgetLeft())) {
-      return reply(429, "Graphy has burned today's fuel. The tanks refill at midnight UTC, or bring your own API key.", "rate");
+      return refuse(429, "Graphy has burned today's fuel. The tanks refill at midnight UTC, or bring your own API key.", "rate");
     }
     const r = await checkRate(ip);
-    if (!r.ok) return reply(429, r.message, "rate");
+    if (!r.ok) return refuse(429, r.message, "rate");
     quota = r.quota;
   }
   const client = ownKey ? new Anthropic({ apiKey: ownKey, maxRetries: 0 }) : house;
@@ -91,9 +96,8 @@ export async function POST(req: Request) {
       : crypto.randomUUID();
   const convo: Conversation = (await loadConversation(conversationId)) ?? { messages: [], turns: 0, contextTokens: 0 };
   if (convo.turns >= LIMITS.maxTurns || convo.contextTokens >= LIMITS.maxContextTokens) {
-    return reply(409, "This conversation is out of oxygen. Start a new one and give Graphy the key details again.", "full");
+    return refuse(409, "This conversation is out of oxygen. Start a new one and give Graphy the key details again.", "full");
   }
-  if (!(await acquire(ip))) return reply(429, "Graphy is still answering your last question.");
 
   const messages: Anthropic.Beta.BetaMessageParam[] = [...convo.messages, { role: "user", content: question }];
 
