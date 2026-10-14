@@ -71,3 +71,4 @@ button.link { background: none; border: 0; padding: 0; color: var(--link); font:
 .msg.graphy { position: relative; }
 .copy { display: block; margin: .4rem 0 0 auto; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: .15rem .6rem; font: inherit; font-size: .75rem; cursor: pointer; }
 .copy:hover { color: var(--text); border-color: var(--accent); }
+.byo select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .5rem; font: inherit; font-size: .8rem; }

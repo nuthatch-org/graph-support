@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { KB } from "@/lib/kb.generated";
 import { PERSONA } from "@/lib/prompt";
+import { CLIENT_TOOLS, TOOL_LABEL, runTool } from "@/lib/tools";
 import {
   LIMITS,
   acquire,
@@ -24,8 +25,9 @@ export const maxDuration = 120;
 const house = new Anthropic({
   defaultHeaders: process.env.ANTHROPIC_WORKSPACE_ID ? { "anthropic-workspace-id": process.env.ANTHROPIC_WORKSPACE_ID } : undefined,
 });
-const MODEL = "claude-sonnet-5-5";
-const MAX_CONTINUATIONS = 2;
+const HOUSE_MODEL = "claude-sonnet-5-5";
+// Models a visitor's own key may choose; all support the server tools Graphy declares.
+const BYO_MODELS = ["claude-sonnet-5-5", "claude-opus-5-5"];
 
 const system: Anthropic.Beta.BetaTextBlockParam[] = [
   { type: "text", text: PERSONA },
@@ -33,8 +35,9 @@ const system: Anthropic.Beta.BetaTextBlockParam[] = [
 ];
 
 const tools: Anthropic.Beta.BetaToolUnion[] = [
-  { type: "web_search_20260209", name: "web_search", max_uses: 3 },
-  { type: "web_fetch_20260209", name: "web_fetch", max_uses: 3, max_content_tokens: 8000 },
+  ...CLIENT_TOOLS,
+  { type: "web_search_20260209", name: "web_search", max_uses: 4 },
+  { type: "web_fetch_20260209", name: "web_fetch", max_uses: 4, max_content_tokens: 8000 },
 ];
 
 type Event =
@@ -55,7 +58,7 @@ export async function POST(req: Request) {
     return reply(503, "Graphy's mission control is not wired up yet.");
   }
 
-  let body: { question?: unknown; conversationId?: unknown };
+  let body: { question?: unknown; conversationId?: unknown; model?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -89,6 +92,7 @@ export async function POST(req: Request) {
     quota = r.quota;
   }
   const client = ownKey ? new Anthropic({ apiKey: ownKey, maxRetries: 0 }) : house;
+  const model = ownKey && typeof body.model === "string" && BYO_MODELS.includes(body.model) ? body.model : HOUSE_MODEL;
 
   const conversationId =
     typeof body.conversationId === "string" && /^[0-9a-f-]{36}$/.test(body.conversationId)
@@ -107,36 +111,53 @@ export async function POST(req: Request) {
       const send = (e: Event) => controller.enqueue(encoder.encode(JSON.stringify(e) + "\n"));
       let spent = 0;
       try {
-        const assistant: Anthropic.Beta.BetaContentBlockParam[] = [];
+        // One question can take several model calls: tool round trips and server-side pauses.
+        const turn: Anthropic.Beta.BetaMessageParam[] = [];
         let final: Anthropic.Beta.BetaMessage | null = null;
+        const maxSteps = ownKey ? 14 : 9;
 
-        for (let i = 0; i <= MAX_CONTINUATIONS; i++) {
-          const history: Anthropic.Beta.BetaMessageParam[] = assistant.length
-            ? [...messages, { role: "assistant", content: assistant }]
-            : messages;
+        for (let step = 0; step < maxSteps; step++) {
+          const last = step === maxSteps - 1;
           const s = client.beta.messages.stream(
             {
-              model: MODEL,
-              max_tokens: 4096,
+              model,
+              max_tokens: 8192,
               system,
               tools,
-              messages: history,
+              tool_choice: last ? { type: "none" } : { type: "auto" },
+              messages: [...messages, ...turn],
               cache_control: { type: "ephemeral" },
-              output_config: { effort: "medium" },
+              output_config: { effort: ownKey ? "high" : "medium" },
             },
             { signal: req.signal },
           );
           for await (const ev of s) {
-            if (ev.type === "content_block_start" && ev.content_block.type === "server_tool_use") {
-              send({ t: "status", v: ev.content_block.name === "web_search" ? "searching the web" : "reading a page" });
+            if (ev.type === "content_block_start" && (ev.content_block.type === "server_tool_use" || ev.content_block.type === "tool_use")) {
+              send({ t: "status", v: TOOL_LABEL[ev.content_block.name] ?? "working" });
             } else if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") {
               send({ t: "text", v: ev.delta.text });
             }
           }
           final = await s.finalMessage();
           if (!ownKey) spent += costUsd(final.usage);
-          assistant.push(...(final.content as Anthropic.Beta.BetaContentBlockParam[]));
-          if (final.stop_reason !== "pause_turn") break;
+          const content = final.content as Anthropic.Beta.BetaContentBlockParam[];
+
+          // A paused turn resumes as the same assistant message.
+          const prev = turn[turn.length - 1];
+          if (prev?.role === "assistant" && Array.isArray(prev.content)) prev.content.push(...content);
+          else turn.push({ role: "assistant", content });
+
+          if (final.stop_reason === "pause_turn") continue;
+          if (final.stop_reason !== "tool_use") break;
+
+          const calls = final.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
+          const results = await Promise.all(
+            calls.map(async (c) => {
+              const r = await runTool(c.name, c.input as Record<string, unknown>);
+              return { type: "tool_result" as const, tool_use_id: c.id, content: r.text, is_error: r.error || undefined };
+            }),
+          );
+          turn.push({ role: "user", content: results });
         }
 
         if (!final || final.stop_reason === "refusal") {
@@ -147,7 +168,7 @@ export async function POST(req: Request) {
 
         const u = final.usage;
         const next: Conversation = {
-          messages: [...messages, { role: "assistant", content: assistant }],
+          messages: [...messages, ...turn],
           turns: convo.turns + 1,
           contextTokens:
             u.input_tokens + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + u.output_tokens,

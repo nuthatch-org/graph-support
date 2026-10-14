@@ -14,7 +14,7 @@ export const LIMITS = {
   // Across all visitors on the house key, so rotating IPs cannot burst the budget in minutes.
   globalPerMinute: num(process.env.GRAPHY_GLOBAL_PER_MINUTE, 10),
   maxTurns: num(process.env.GRAPHY_MAX_TURNS, 8),
-  maxContextTokens: num(process.env.GRAPHY_MAX_CONTEXT_TOKENS, 90_000),
+  maxContextTokens: num(process.env.GRAPHY_MAX_CONTEXT_TOKENS, 160_000),
   maxQuestionChars: 2_000,
   conversationTtlSeconds: 2 * 60 * 60,
 };

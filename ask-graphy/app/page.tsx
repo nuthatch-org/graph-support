@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Graphy } from "./Graphy";
 import { Markdown } from "./Markdown";
-import { KeyPanel } from "./KeyPanel";
+import { KeyPanel, MODELS } from "./KeyPanel";
 import { CopyButton } from "./CopyButton";
 
 type Msg = { role: "user" | "graphy"; text: string; error?: boolean };
@@ -24,6 +24,7 @@ export default function Page() {
   const [turnsLeft, setTurnsLeft] = useState<number | null>(null);
   const [closed, setClosed] = useState(false);
   const [ownKey, setOwnKey] = useState("");
+  const [model, setModel] = useState(MODELS[0].id);
   const [showKey, setShowKey] = useState(false);
   const [keyReason, setKeyReason] = useState<string | undefined>();
   const [quota, setQuota] = useState<{ hourLeft: number; dayLeft: number } | null>(null);
@@ -34,8 +35,16 @@ export default function Page() {
     try {
       const k = sessionStorage.getItem("graphy-key");
       if (k) setOwnKey(k);
+      const m = sessionStorage.getItem("graphy-model");
+      if (m && MODELS.some((x) => x.id === m)) setModel(m);
     } catch {}
   }, []);
+  function saveModel(m: string) {
+    setModel(m);
+    try {
+      sessionStorage.setItem("graphy-model", m);
+    } catch {}
+  }
   function saveKey(k: string) {
     setOwnKey(k);
     try {
@@ -68,7 +77,7 @@ export default function Page() {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "content-type": "application/json", ...(ownKey.trim() ? { "x-anthropic-key": ownKey.trim() } : {}) },
-        body: JSON.stringify({ question, conversationId: convo }),
+        body: JSON.stringify({ question, conversationId: convo, model: ownKey ? model : undefined }),
       });
       if (!res.body) throw new Error("no body");
       const reader = res.body.getReader();
@@ -177,7 +186,7 @@ export default function Page() {
           {msgs.length > 0 && <button type="button" className="ghost" onClick={reset} disabled={busy}>New conversation</button>}
           <button type="submit" disabled={busy || closed || !input.trim()}>Ask</button>
         </div>
-        {showKey && <KeyPanel ownKey={ownKey} onSave={(k) => { saveKey(k); if (k) setKeyReason(undefined); }} reason={keyReason} />}
+        {showKey && <KeyPanel ownKey={ownKey} onSave={(k) => { saveKey(k); if (k) setKeyReason(undefined); }} reason={keyReason} model={model} onModel={saveModel} />}
       </form>
 
       <footer>Graphy can be wrong. Check anything that moves money against the source. Built on notes from community support threads; not affiliated with The Graph Foundation.</footer>
