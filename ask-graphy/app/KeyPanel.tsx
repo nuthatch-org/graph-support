@@ -67,10 +67,10 @@ export function KeyPanel({
       {reason && <p className="why">{reason}</p>}
       <p className="lead">
         <strong>Bring your own AI (API key) and skip the rate limits.</strong> Paste a key from{" "}
-        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">Claude</a>,{" "}
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">Claude</a> (recommended),{" "}
         <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">ChatGPT</a> or{" "}
         <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer">Grok</a>, pick a model, and your account pays
-        directly, usually a few cents a question. On a Claude key Graphy also thinks harder and can search the web.
+        directly, usually a few cents a question. Graphy is tuned for Claude: on a Claude key it also searches the web and thinks harder.
       </p>
       <div className="row">
         <input
