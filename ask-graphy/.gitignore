@@ -1,0 +1,7 @@
+node_modules
+.next
+lib/kb.generated.ts
+.env*
+next-env.d.ts
+*.tsbuildinfo
+.vercel

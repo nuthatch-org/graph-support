@@ -1,0 +1,25 @@
+{
+  "name": "ask-graphy",
+  "private": true,
+  "scripts": {
+    "kb": "node scripts/bundle-kb.mjs",
+    "dev": "npm run kb && next dev",
+    "build": "npm run kb && next build",
+    "start": "next start",
+    "typecheck": "npm run kb && tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.133.0",
+    "@upstash/ratelimit": "2.2.0",
+    "@upstash/redis": "1.39.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5.9"
+  }
+}
