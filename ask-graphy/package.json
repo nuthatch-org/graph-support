@@ -4,7 +4,8 @@
   "scripts": {
     "kb": "node scripts/bundle-kb.mjs",
     "dev": "npm run kb && next dev",
-    "build": "npm run kb && next build",
+    "library": "node scripts/build-library.mjs",
+    "build": "npm run kb && npm run library && next build",
     "start": "next start",
     "typecheck": "npm run kb && tsc --noEmit"
   },

@@ -5,3 +5,6 @@ lib/kb.generated.ts
 next-env.d.ts
 *.tsbuildinfo
 .vercel
+.library-cache
+lib/library.generated.json
+eval/results

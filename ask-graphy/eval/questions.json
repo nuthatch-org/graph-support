@@ -1,0 +1,266 @@
+[
+  {
+    "id": "ie084-arc",
+    "q": "How do I close my Arc allocation? indexer-agent says IE084.",
+    "must": [
+      "IE084 means graph-node returned no POI (generated block 0) and no block number was supplied",
+      "Gives a zero-POI close, e.g. actions queue unallocate <deployment> <allocation> 0x0 true 0 0x0, or allocations close with a block and --force",
+      "Network flag is arbitrum-one (the protocol network), not Arc",
+      "Arc earns no indexing rewards (issuanceRewards false), so a zero POI forfeits nothing",
+      "Does not claim Arc means Arbitrum"
+    ]
+  },
+  {
+    "id": "zero-poi-fees",
+    "q": "If I close with 0x0 POI do I still get my query fees?",
+    "must": [
+      "Yes: query fees come through TAP receipts/RAVs, not the close POI",
+      "A zero POI only gives up indexing rewards for that allocation"
+    ]
+  },
+  {
+    "id": "tap-sender",
+    "q": "My indexer stopped getting queries last week. tap-agent logs: Sender 0x6AA2Ace7Ec77C06C1DAb1b0aFaC9d56d9C9D0e50 is not on your [tap.sender_aggregator_endpoints] list. What do I do?",
+    "must": [
+      "The Foundation rotated the mainnet TAP sender on 24 September 2026",
+      "Add 0x6AA2... alongside the old 0xDDE4... sender, same aggregator https://tap-aggregator.network.thegraph.com",
+      "Restart tap-agent",
+      "Delete the sender's row from tap_horizon_denylist by hand; the agent never un-denies"
+    ]
+  },
+  {
+    "id": "bad-indexers-400",
+    "q": "Getting bad indexers: {0x3b9b...: BadResponse(400)} from the only indexer on my subgraph, and it looks healthy and synced. Why?",
+    "must": [
+      "A 400 from indexer-service is a receipt/payment check failure, not an indexing failure",
+      "Likely the indexer has denylisted or rejected the gateway's TAP sender (sender rotation or aggregator outage)",
+      "The fix is on the indexer's side; the reporter should contact that operator or get more indexers via signal"
+    ]
+  },
+  {
+    "id": "skip-20000",
+    "q": "Query fails with: The skip argument must be between 0 and 20000, but is 21000",
+    "must": [
+      "The indexer caps skip at 20000 (GRAPH_GRAPHQL_MAX_SKIP)",
+      "Use cursor pagination on id_gt (or another ordered field) instead of skip"
+    ]
+  },
+  {
+    "id": "ipfs-null",
+    "q": "A field I fill from IPFS metadata is null and never updates even though the file is on IPFS now",
+    "must": [
+      "graph-node fetches ipfs.cat once at index time and does not retry, storing null",
+      "Only a redeploy/resync re-fetches; or fetch the metadata client-side / use file data sources"
+    ]
+  },
+  {
+    "id": "healthy-but-stale",
+    "q": "My subgraph shows healthy and 99.9% synced but the data is two days old",
+    "must": [
+      "Health is measured against the node's own chain head, which can be frozen (halted chain or stuck chain client)",
+      "Compare _meta.block.timestamp to wall clock and the indexer's chainHeadBlock to an independent RPC"
+    ]
+  },
+  {
+    "id": "studio-econnrefused",
+    "q": "Deploying to Subgraph Studio fails with connect ECONNREFUSED 10.0.14.157:8030",
+    "must": [
+      "The 10.x address is inside Studio's own network; nothing is wrong on the user's machine",
+      "Only the Foundation (which runs Studio) can fix it; retry and report it to them"
+    ]
+  },
+  {
+    "id": "ingestor",
+    "q": "Upgraded graph-node from 0.41 to 0.45 and nothing indexes. Logs say Not running block ingestion, ingestor is index-node-0",
+    "must": [
+      "Since 0.42.1 the [chains] ingestor value must exactly equal the node's --node-id",
+      "Fix the mismatch (e.g. hyphen vs underscore) and restart; nothing needs repairing"
+    ]
+  },
+  {
+    "id": "ie070",
+    "q": "Every allocation fails with IE070 Failed to query graph node for blockHashFromNumber: no data returned",
+    "must": [
+      "The agent's graph-node status endpoint points at a query node, which has no chains",
+      "Point INDEXER_AGENT_GRAPH_NODE_STATUS_ENDPOINT at an index node"
+    ]
+  },
+  {
+    "id": "no-sender-signer",
+    "q": "indexer-service 2.0.2 logs No sender found for signer 0xfF4B7A5EfD00Ff2EC3518D4F250A27e4c29A2211",
+    "must": [
+      "graph_tally_collector_address defaults wrongly (0x4444...) in that version",
+      "Set it to 0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e and restart indexer-service and tap-agent"
+    ]
+  },
+  {
+    "id": "thawing-close",
+    "q": "closeAllocation reverts with ProvisionManagerInvalidValue(message: 0x746f6b656e73, value: 0, min: 100000000000000000000000) after I started thawing my whole provision",
+    "must": [
+      "collect checks tokens minus tokensThawing against the 100k GRT minimum; the agent always collects before closing",
+      "stopService does not carry the check: call SubgraphService.stopService directly (multicall for several), or add to the provision",
+      "Close allocations before thawing next time"
+    ]
+  },
+  {
+    "id": "ie015-overallocated",
+    "q": "After undelegation my close transaction mined but the agent reported IE015 and the allocation is still open with 0 tokens",
+    "must": [
+      "Over-allocated collect now resizes the allocation to zero instead of closing it",
+      "Get back under the over-allocation limit, then unallocate again"
+    ]
+  },
+  {
+    "id": "denied-rewards",
+    "q": "My deployment got put on the rewards denylist. Should I close the allocation so I don't lose rewards?",
+    "must": [
+      "No: on a denied deployment presentPOI defers rewards rather than dropping them",
+      "Closing reclaims the uncollected rewards to the reclaim address",
+      "Keep it open and present a real POI within 28 days (maxPOIStaleness)"
+    ]
+  },
+  {
+    "id": "network-subgraph-crlf",
+    "q": "The Graph network subgraph is failing with string is not a BigInt: `26956207 `: invalid digit found in string in handleSubgraphDeploymentManifest",
+    "must": [
+      "A manifest with CRLF line endings broke the network subgraph's newline-splitting parser",
+      "Move to the fixed network subgraph deployment (v2.3.2, QmatH4...)"
+    ]
+  },
+  {
+    "id": "found-no-tx",
+    "q": "Upgrade indexer reports Found no transaction for event at a Polygon block, but the tx is clearly on chain",
+    "must": [
+      "The indexer's cached copy of that block is corrupt/spliced, not the chain",
+      "Fix is graphman chain check-blocks on that block, done by the operator (the Foundation for the upgrade indexer)"
+    ]
+  },
+  {
+    "id": "who-owns-studio",
+    "q": "Who do I talk to about Subgraph Studio being down, Edge & Node?",
+    "must": [
+      "The Graph Foundation runs Studio since the August 2026 handover, not Edge & Node",
+      "Points to the Foundation's support channels in The Graph Discord"
+    ]
+  },
+  {
+    "id": "one-indexer-gets-all",
+    "q": "Why do almost all queries for my subgraph go to one indexer even though five are allocated?",
+    "must": [
+      "The gateway picks a few indexers by score (latency, success rate, fee, freshness) and stake, not round robin",
+      "Being even slightly behind or failing requests drops an indexer's share"
+    ]
+  },
+  {
+    "id": "chain-rewards-check",
+    "q": "Does indexing subgraphs on Moonbeam still earn indexing rewards?",
+    "must": [
+      "Says how to check: issuanceRewards on the chain's entry in the networks registry",
+      "Gives a current answer for Moonbeam with its source (rewards removed 2026-10-01 per the notes, or the registry flag)"
+    ]
+  },
+  {
+    "id": "off-topic",
+    "q": "Can you write me a Python script to scrape Twitter?",
+    "must": [
+      "Declines kindly and says it only covers The Graph"
+    ]
+  },
+  {
+    "id": "delegation-tax",
+    "q": "How much is the delegation tax when I delegate GRT to an indexer?",
+    "must": [
+      "There is no delegation tax any more: Graph Horizon removed the 0.5% tax",
+      "Does not state that a 0.5% tax currently applies"
+    ]
+  },
+  {
+    "id": "curation-tax",
+    "q": "What does it cost me to signal on a subgraph as a curator?",
+    "must": [
+      "A 1% curation tax on the GRT signalled",
+      "The tax is burned"
+    ]
+  },
+  {
+    "id": "free-queries",
+    "q": "Is there a free tier for querying my subgraph on the network?",
+    "must": [
+      "100,000 free queries per month",
+      "After that, pay with GRT or a credit card through Subgraph Studio"
+    ]
+  },
+  {
+    "id": "pruning",
+    "q": "My subgraph's database is huge and I only query current state. Can I stop it keeping history?",
+    "must": [
+      "Use indexerHints with prune in the manifest",
+      "prune: auto keeps only what's needed (or set a block count)"
+    ]
+  },
+  {
+    "id": "graft-network",
+    "q": "Can I use grafting to hotfix my subgraph that's published on the network?",
+    "must": [
+      "The docs recommend not using grafting for subgraphs published to The Graph Network",
+      "Explains grafting needs features: [grafting] with a base deployment and block"
+    ]
+  },
+  {
+    "id": "declared-calls",
+    "q": "How do I declare eth_calls in my subgraph manifest so they run in parallel?",
+    "must": [
+      "Add a calls: block to the event handler in subgraph.yaml",
+      "Requires specVersion 1.2.0 or later"
+    ]
+  },
+  {
+    "id": "query-timeout",
+    "q": "Which graph-node environment variable sets the maximum GraphQL query execution time?",
+    "must": [
+      "GRAPH_GRAPHQL_QUERY_TIMEOUT",
+      "Value is in seconds"
+    ]
+  },
+  {
+    "id": "alloc-modes",
+    "q": "What allocation management modes does indexer-agent have and how do I set one?",
+    "must": [
+      "AUTO (default), OVERSIGHT and MANUAL",
+      "Set with --allocation-management or INDEXER_AGENT_ALLOCATION_MANAGEMENT",
+      "OVERSIGHT queues actions for approval; MANUAL skips the reconciliation loop"
+    ]
+  },
+  {
+    "id": "code-location",
+    "q": "Where in graph-node's source is the error 'Found no transaction for event' raised?",
+    "must": [
+      "chain/ethereum/src/data_source.rs",
+      "Explains it fires when the block graph-node holds does not contain the log's transaction"
+    ]
+  },
+  {
+    "id": "release-check",
+    "q": "Has indexer-rs shipped a release that includes the new TAP sender 0x6AA2... as a default?",
+    "must": [
+      "No: the newest tap-agent and indexer-service releases are v2.2.1 from 17 July 2026, before the default was added",
+      "Operators must add the sender to their config themselves"
+    ]
+  },
+  {
+    "id": "arc-substreams",
+    "q": "Can I use Substreams on Arc mainnet?",
+    "must": [
+      "Yes: the networks registry lists substreams (and firehose and subgraphs) for arc",
+      "Says where that comes from (the registry)"
+    ]
+  },
+  {
+    "id": "newcomer",
+    "q": "I'm new. What actually is a subgraph and how do I make one?",
+    "must": [
+      "Explains a subgraph indexes blockchain events into a GraphQL API (schema, manifest, mappings)",
+      "Points to the first steps: graph-cli graph init, then build and deploy via Subgraph Studio"
+    ]
+  }
+]
