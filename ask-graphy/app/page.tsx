@@ -183,7 +183,7 @@ export default function Page() {
           <span className="hint">
             {turnsLeft !== null && !closed ? `${turnsLeft} follow-ups left here. ` : ""}
             {!ownKey && quota ? `${quota.hourLeft} questions left this hour, ${quota.dayLeft} today. ` : ""}
-            <button type="button" className="link" onClick={() => setShowKey((v) => !v)}>
+            <button type="button" className={ownKey ? "link" : "cta"} onClick={() => setShowKey((v) => !v)}>
               {ownKey ? "Using your own AI" : <strong>Bring your own AI (API key) and skip the rate limits</strong>}
             </button>
           </span>
