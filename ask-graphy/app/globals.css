@@ -72,3 +72,6 @@ button.link { background: none; border: 0; padding: 0; color: var(--link); font:
 .copy { display: block; margin: .4rem 0 0 auto; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: .15rem .6rem; font: inherit; font-size: .75rem; cursor: pointer; }
 .copy:hover { color: var(--text); border-color: var(--accent); }
 .byo select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .5rem; font: inherit; font-size: .8rem; }
+form button.cta { display: inline-block; margin-top: .3rem; background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 9999px; padding: .3rem .9rem; font-size: .9rem; font-weight: 600; }
+form button.cta:hover { background: var(--accent); color: #1b1206; }
+form button.cta strong { font-weight: 600; }
