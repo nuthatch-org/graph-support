@@ -43,7 +43,9 @@ export default function Page() {
     } catch {}
   }
 
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth", block: "end" }), [msgs, status]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [msgs, status]);
 
   function reset() {
     setMsgs([]);
