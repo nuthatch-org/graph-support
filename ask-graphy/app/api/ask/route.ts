@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { KB } from "@/lib/kb.generated";
 import { PERSONA } from "@/lib/prompt";
 import { CLIENT_TOOLS, TOOL_LABEL, runTool } from "@/lib/tools";
+import { ANTHROPIC_MODELS, ProviderError, askOpenAICompat, providerFor, type ChatMessage } from "@/lib/providers";
 import {
   LIMITS,
   acquire,
@@ -26,8 +27,9 @@ const house = new Anthropic({
   defaultHeaders: process.env.ANTHROPIC_WORKSPACE_ID ? { "anthropic-workspace-id": process.env.ANTHROPIC_WORKSPACE_ID } : undefined,
 });
 const HOUSE_MODEL = "claude-sonnet-5-5";
-// Models a visitor's own key may choose; all support the server tools Graphy declares.
-const BYO_MODELS = ["claude-sonnet-5-5", "claude-opus-5-5"];
+// Models a visitor's Anthropic key may choose; all support the server tools Graphy declares.
+const BYO_MODELS = ANTHROPIC_MODELS.map((m) => m.id);
+const MODEL_ID = /^[\w.:-]{2,80}$/;
 
 const system: Anthropic.Beta.BetaTextBlockParam[] = [
   { type: "text", text: PERSONA },
@@ -72,8 +74,9 @@ export async function POST(req: Request) {
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   // A visitor's own key is used for this request only: never logged, never stored.
-  const ownKey = req.headers.get("x-anthropic-key")?.trim() || "";
-  if (ownKey && !/^sk-ant-[\w-]{20,}$/.test(ownKey)) return reply(400, "That doesn't look like an Anthropic API key.", "key");
+  const ownKey = (req.headers.get("x-user-key") ?? req.headers.get("x-anthropic-key"))?.trim() || "";
+  const provider = ownKey ? providerFor(ownKey) : "anthropic";
+  if (!provider) return reply(400, "That doesn't look like an Anthropic, OpenAI or xAI API key.", "key");
   if (!(await acquire(ip))) return reply(429, "Graphy is still answering your last question.");
   const refuse = async (status: number, v: string, code?: "rate" | "key" | "full") => {
     await release(ip);
@@ -92,13 +95,21 @@ export async function POST(req: Request) {
     quota = r.quota;
   }
   const client = ownKey ? new Anthropic({ apiKey: ownKey, maxRetries: 0 }) : house;
-  const model = ownKey && typeof body.model === "string" && BYO_MODELS.includes(body.model) ? body.model : HOUSE_MODEL;
+  const asked = typeof body.model === "string" ? body.model : "";
+  const model =
+    provider === "anthropic"
+      ? ownKey && BYO_MODELS.includes(asked) ? asked : HOUSE_MODEL
+      : MODEL_ID.test(asked) ? asked : "";
+  if (!model) return refuse(400, "Pick a model for your key first.", "key");
 
   const conversationId =
     typeof body.conversationId === "string" && /^[0-9a-f-]{36}$/.test(body.conversationId)
       ? body.conversationId
       : crypto.randomUUID();
-  const convo: Conversation = (await loadConversation(conversationId)) ?? { messages: [], turns: 0, contextTokens: 0 };
+  const stored = await loadConversation(conversationId);
+  // Message formats differ between providers, so switching provider starts a fresh conversation.
+  const convo: Conversation =
+    stored && (stored.provider ?? "anthropic") === provider ? stored : { provider, messages: [], turns: 0, contextTokens: 0 };
   if (convo.turns >= LIMITS.maxTurns || convo.contextTokens >= LIMITS.maxContextTokens) {
     return refuse(409, "This conversation is out of oxygen. Start a new one and give Graphy the key details again.", "full");
   }
@@ -111,6 +122,31 @@ export async function POST(req: Request) {
       const send = (e: Event) => controller.enqueue(encoder.encode(JSON.stringify(e) + "\n"));
       let spent = 0;
       try {
+        if (provider !== "anthropic") {
+          const history = convo.messages as unknown as ChatMessage[];
+          const added = await askOpenAICompat({
+            provider,
+            key: ownKey,
+            model,
+            system: `${PERSONA}\n\nOn this model web_search and web_fetch are not available; use the other tools.\n\n<knowledge_base>\n${KB}\n</knowledge_base>`,
+            history: [...history, { role: "user", content: question }],
+            send,
+            signal: req.signal,
+            maxSteps: 14,
+          });
+          const all = [...history, { role: "user", content: question } as ChatMessage, ...added];
+          const next: Conversation = {
+            provider,
+            messages: all as unknown as Anthropic.Beta.BetaMessageParam[],
+            turns: convo.turns + 1,
+            contextTokens: Math.round(JSON.stringify(all).length / 4),
+          };
+          await saveConversation(conversationId, next);
+          const closed = next.turns >= LIMITS.maxTurns || next.contextTokens >= LIMITS.maxContextTokens;
+          send({ t: "done", conversationId, turnsLeft: Math.max(0, LIMITS.maxTurns - next.turns), closed, quota });
+          return;
+        }
+
         // One question can take several model calls: tool round trips and server-side pauses.
         const turn: Anthropic.Beta.BetaMessageParam[] = [];
         let final: Anthropic.Beta.BetaMessage | null = null;
@@ -168,6 +204,7 @@ export async function POST(req: Request) {
 
         const u = final.usage;
         const next: Conversation = {
+          provider,
           messages: [...messages, ...turn],
           turns: convo.turns + 1,
           contextTokens:
@@ -177,7 +214,15 @@ export async function POST(req: Request) {
         const closed = next.turns >= LIMITS.maxTurns || next.contextTokens >= LIMITS.maxContextTokens;
         send({ t: "done", conversationId, turnsLeft: Math.max(0, LIMITS.maxTurns - next.turns), closed, quota });
       } catch (err) {
-        if (ownKey && (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError)) {
+        if (err instanceof ProviderError) {
+          const v =
+            err.status === 401 || err.status === 403
+              ? "Your API key was refused. Check it, or clear it to use Graphy's own (rate limited)."
+              : err.status === 429
+                ? "Your provider rate limited or ran out of credit on that key."
+                : `Your provider refused the request: ${err.message}`;
+          send({ t: "error", v, code: err.status === 401 || err.status === 403 ? "key" : undefined });
+        } else if (ownKey && (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError)) {
           send({ t: "error", v: "Your API key was refused. Check it, or clear it to use Graphy's own (rate limited).", code: "key" });
         } else if (ownKey && err instanceof Anthropic.BadRequestError) {
           send({ t: "error", v: `Your key's account refused the request: ${err.message}` });

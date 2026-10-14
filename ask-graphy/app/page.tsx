@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Graphy } from "./Graphy";
 import { Markdown } from "./Markdown";
-import { KeyPanel, MODELS } from "./KeyPanel";
+import { KeyPanel, type SavedKey } from "./KeyPanel";
 import { CopyButton } from "./CopyButton";
 
 type Msg = { role: "user" | "graphy"; text: string; error?: boolean };
@@ -23,8 +23,9 @@ export default function Page() {
   const [convo, setConvo] = useState<string | null>(null);
   const [turnsLeft, setTurnsLeft] = useState<number | null>(null);
   const [closed, setClosed] = useState(false);
-  const [ownKey, setOwnKey] = useState("");
-  const [model, setModel] = useState(MODELS[0].id);
+  const [saved, setSaved] = useState<SavedKey | null>(null);
+  const [model, setModel] = useState("");
+  const ownKey = saved?.key ?? "";
   const [showKey, setShowKey] = useState(false);
   const [keyReason, setKeyReason] = useState<string | undefined>();
   const [quota, setQuota] = useState<{ hourLeft: number; dayLeft: number } | null>(null);
@@ -33,10 +34,13 @@ export default function Page() {
   // Session storage only: the key leaves with the tab, and is sent solely as a request header.
   useEffect(() => {
     try {
-      const k = sessionStorage.getItem("graphy-key");
-      if (k) setOwnKey(k);
-      const m = sessionStorage.getItem("graphy-model");
-      if (m && MODELS.some((x) => x.id === m)) setModel(m);
+      const k = sessionStorage.getItem("graphy-byo");
+      if (k) {
+        const v = JSON.parse(k) as SavedKey;
+        setSaved(v);
+        const m = sessionStorage.getItem("graphy-model");
+        setModel(m && v.models.some((x) => x.id === m) ? m : v.models[0]?.id ?? "");
+      }
     } catch {}
   }, []);
   function saveModel(m: string) {
@@ -45,11 +49,11 @@ export default function Page() {
       sessionStorage.setItem("graphy-model", m);
     } catch {}
   }
-  function saveKey(k: string) {
-    setOwnKey(k);
+  function saveKey(k: SavedKey | null) {
+    setSaved(k);
     try {
-      if (k) sessionStorage.setItem("graphy-key", k);
-      else sessionStorage.removeItem("graphy-key");
+      if (k) sessionStorage.setItem("graphy-byo", JSON.stringify(k));
+      else sessionStorage.removeItem("graphy-byo");
     } catch {}
   }
 
@@ -76,7 +80,7 @@ export default function Page() {
     try {
       const res = await fetch("/api/ask", {
         method: "POST",
-        headers: { "content-type": "application/json", ...(ownKey.trim() ? { "x-anthropic-key": ownKey.trim() } : {}) },
+        headers: { "content-type": "application/json", ...(ownKey ? { "x-user-key": ownKey } : {}) },
         body: JSON.stringify({ question, conversationId: convo, model: ownKey ? model : undefined }),
       });
       if (!res.body) throw new Error("no body");
@@ -180,13 +184,13 @@ export default function Page() {
             {turnsLeft !== null && !closed ? `${turnsLeft} follow-ups left here. ` : ""}
             {!ownKey && quota ? `${quota.hourLeft} questions left this hour, ${quota.dayLeft} today. ` : ""}
             <button type="button" className="link" onClick={() => setShowKey((v) => !v)}>
-              {ownKey ? "Using your key" : "Bring your own key"}
+              {ownKey ? "Using your own AI" : <strong>Bring your own AI (API key) and skip the rate limits</strong>}
             </button>
           </span>
           {msgs.length > 0 && <button type="button" className="ghost" onClick={reset} disabled={busy}>New conversation</button>}
           <button type="submit" disabled={busy || closed || !input.trim()}>Ask</button>
         </div>
-        {showKey && <KeyPanel ownKey={ownKey} onSave={(k) => { saveKey(k); if (k) setKeyReason(undefined); }} reason={keyReason} model={model} onModel={saveModel} />}
+        {showKey && <KeyPanel saved={saved} onSave={(k) => { saveKey(k); if (k) setKeyReason(undefined); }} reason={keyReason} model={model} onModel={saveModel} />}
       </form>
 
       <footer>Graphy can be wrong. Check anything that moves money against the source. Built on notes from community support threads; not affiliated with The Graph Foundation.</footer>

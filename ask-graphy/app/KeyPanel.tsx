@@ -2,20 +2,20 @@
 
 import { useState } from "react";
 
-export const MODELS = [
-  { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5", note: "fast, a few cents a question" },
-  { id: "claude-opus-5-5", label: "Claude Opus 5.5", note: "deeper, roughly twice the cost" },
-];
+export type Model = { id: string; label: string };
+export type SavedKey = { key: string; provider: "anthropic" | "openai" | "xai"; models: Model[] };
+
+const NAMES = { anthropic: "Claude", openai: "ChatGPT", xai: "Grok" };
 
 export function KeyPanel({
-  ownKey,
+  saved,
   onSave,
   reason,
   model,
   onModel,
 }: {
-  ownKey: string;
-  onSave: (k: string) => void;
+  saved: SavedKey | null;
+  onSave: (k: SavedKey | null) => void;
   reason?: string;
   model: string;
   onModel: (m: string) => void;
@@ -30,11 +30,12 @@ export function KeyPanel({
     setChecking(true);
     setNote(null);
     try {
-      const r = await fetch("/api/key", { method: "POST", headers: { "x-anthropic-key": k } });
+      const r = await fetch("/api/key", { method: "POST", headers: { "x-user-key": k } });
       const j = await r.json();
       setNote({ ok: j.ok, text: j.message });
       if (j.ok) {
-        onSave(k);
+        onSave({ key: k, provider: j.provider, models: j.models });
+        onModel(j.models[0].id);
         setDraft("");
       }
     } catch {
@@ -44,18 +45,19 @@ export function KeyPanel({
     }
   }
 
-  if (ownKey) {
+  if (saved) {
     return (
       <div className="byo on">
         <span>
-          Using your key <code>…{ownKey.slice(-4)}</code>. No limits from Graphy; your Anthropic account pays.
+          Using your {NAMES[saved.provider]} key <code>…{saved.key.slice(-4)}</code>. No limits from Graphy; your account pays.
         </span>
         <select value={model} onChange={(e) => onModel(e.target.value)} aria-label="Model">
-          {MODELS.map((m) => (
-            <option key={m.id} value={m.id}>{m.label}: {m.note}</option>
+          {saved.models.map((m) => (
+            <option key={m.id} value={m.id}>{m.label}</option>
           ))}
         </select>
-        <button type="button" className="ghost" onClick={() => { onSave(""); setNote(null); }}>Forget key</button>
+        <button type="button" className="ghost" onClick={() => { onSave(null); setNote(null); }}>Forget key</button>
+        {note?.ok && <p className="ok">{note.text}</p>}
       </div>
     );
   }
@@ -64,16 +66,18 @@ export function KeyPanel({
     <div className="byo">
       {reason && <p className="why">{reason}</p>}
       <p className="lead">
-        <strong>Bring your own key</strong> to skip the limits. Get one at{" "}
-        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>,
-        paste it here, and you pay Anthropic directly: a few cents a question on Claude Sonnet 5.5, or pick Opus 5.5 for harder ones. Graphy also thinks harder on your key.
+        <strong>Bring your own AI (API key) and skip the rate limits.</strong> Paste a key from{" "}
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">Claude</a>,{" "}
+        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">ChatGPT</a> or{" "}
+        <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer">Grok</a>, pick a model, and your account pays
+        directly, usually a few cents a question. On a Claude key Graphy also thinks harder and can search the web.
       </p>
       <div className="row">
         <input
           type="password"
           autoComplete="off"
           spellCheck={false}
-          placeholder="sk-ant-…"
+          placeholder="sk-ant-…, sk-… or xai-…"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
