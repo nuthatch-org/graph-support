@@ -1,8 +1,8 @@
 # Closing allocations: IE codes, zero POIs and the traps
 
-**Last checked:** 2026-10-14 against `graphprotocol/indexer` at `d216388a` (2026-09-29).
+**Last checked:** 2026-10-14 (Arc rewards against the registry) and `graphprotocol/indexer` at `d216388a` (2026-09-29).
 
-**Asked as:** "how do I close this allocation", "IE084", "IE067", "IE068", "IE015", "tx mined but IE015", "force close", "zero POI", "close with 0x0", "can't close allocation while thawing".
+**Asked as:** "how do I close this allocation", "IE084", "IE067", "IE068", "IE015", "tx mined but IE015", "force close", "zero POI", "close with 0x0", "can't close allocation while thawing", "will I collect query fees with 0x0", "do I lose rewards".
 
 ## The codes
 
@@ -14,7 +14,13 @@
 | IE015 | Failed to close allocation | Generic. If the tx mined anyway, see over-allocation below. |
 | IE070 | Failed to query latest valid epoch and block hash | graph-node `blockHashFromNumber` returned nothing; see #34, #35. |
 
-"Arc" in these questions is the Arc chain (Circle's), which got mainnet subgraph support on 2026-09-16, not shorthand for Arbitrum. The allocation still lives on the protocol network, so `--network arbitrum-one` is right whichever chain the deployment indexes. The question is whether graph-node has synced the Arc deployment to the epoch start block.
+"Arc" in these questions is the Arc chain (Circle's), which got mainnet subgraph support on 2026-09-16, not shorthand for Arbitrum. The allocation still lives on the protocol network, so `--network arbitrum-one` is right whichever chain the deployment indexes.
+
+**Arc earns no indexing rewards.** The networks registry (v0.8.7, 2026-10-08) has `issuanceRewards: false` for `arc` and `arc-testnet`, so a zero-POI close on an Arc allocation gives up nothing; there is no reason to sync first "to keep the rewards". Marc-André (Ellipfra) said the same in Discord, 2026-10-14.
+
+**A zero POI does not touch query fees.** Fees come through TAP receipts and RAVs, not the close POI (Marc-André, 2026-10-14).
+
+Whether any chain earns rewards: `issuanceRewards` on its entry in `https://networks-registry.thegraph.com/TheGraphNetworksRegistry.json`. Check it before telling anyone a close forfeits rewards.
 
 An unknown chain alias fails earlier in `resolveChainId`, not as IE084. An old note says IE084 once came from graph-node calling Gnosis `xdai` while the agent knew only `gnosis`; in current source that would surface from `resolveChainId` instead. Treat it as history.
 

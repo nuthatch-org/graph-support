@@ -36,3 +36,5 @@
 
 
 The Lodestar directory API that answered "signalled but unallocated per network" went offline on 2026-10-13.
+
+- **Does a chain earn indexing rewards** (2026-10-14): `issuanceRewards` on the chain's entry in `https://networks-registry.thegraph.com/TheGraphNetworksRegistry.json`. Arc mainnet and testnet are `false`. The older `registry.thegraph.com` host did not answer.
