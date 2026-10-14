@@ -68,3 +68,6 @@ button.link { background: none; border: 0; padding: 0; color: var(--link); font:
 .byo .ok { color: var(--ok, #7fd19b); margin-top: .5rem; }
 .byo .bad { color: var(--error); margin-top: .5rem; }
 .byo .fine { font-size: .75rem; margin: .5rem 0 0; }
+.msg.graphy { position: relative; }
+.copy { display: block; margin: .4rem 0 0 auto; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: .15rem .6rem; font: inherit; font-size: .75rem; cursor: pointer; }
+.copy:hover { color: var(--text); border-color: var(--accent); }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Graphy } from "./Graphy";
 import { Markdown } from "./Markdown";
 import { KeyPanel } from "./KeyPanel";
+import { CopyButton } from "./CopyButton";
 
 type Msg = { role: "user" | "graphy"; text: string; error?: boolean };
 
@@ -138,6 +139,7 @@ export default function Page() {
         {msgs.map((m, i) => (
           <div key={i} className={`msg ${m.role}${m.error ? " error" : ""}`}>
             {m.role === "graphy" ? <Markdown text={m.text} /> : <p>{m.text}</p>}
+            {m.role === "graphy" && m.text && !m.error && !(busy && i === msgs.length - 1) && <CopyButton text={m.text} />}
           </div>
         ))}
         {status && <div className="status">Graphy is {status}…</div>}
