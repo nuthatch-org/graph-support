@@ -105,6 +105,8 @@ export async function recordSpend(usd: number) {
 }
 
 export interface Conversation {
+  // Anthropic message params, or OpenAI-style chat messages when provider is openai or xai.
+  provider?: "anthropic" | "openai" | "xai";
   messages: Anthropic.Beta.BetaMessageParam[];
   turns: number;
   contextTokens: number;
