@@ -171,6 +171,42 @@ async function indexerStatus(i: { status_url: string; deployments: string[] }) {
   return clip(`HTTP ${r.status} from ${u.origin}${u.pathname}\n${await r.text()}`, 8000);
 }
 
+// --- live network nests (nuthatch, polled every 15 minutes) behind graph-data on Helsinki ---
+
+const NESTS: Record<string, string> = {
+  alloc: "Horizon SubgraphService on Arbitrum One: allocations, POIs, provisions, curation signal, indexer and deployment state",
+  gns: "L2GNS on Arbitrum One: subgraph publications, versions, deployment ids, owners",
+  dips: "DIPS on Arbitrum One: Issuance Allocator, Recurring Agreement Manager, Recurring Collector",
+  services: "Horizon data service registrations: which providers registered with which data services",
+  qos: "The Graph QoS and Rewards Eligibility Oracle data on Gnosis",
+  supply: "GRT token on Arbitrum One: transfers, mints, burns, holders",
+  "supply-mainnet": "GRT token on Ethereum mainnet: transfers, mints, burns, holders",
+};
+
+async function queryNest(i: { nest: string; action: string; sql?: string }) {
+  const base = process.env.NESTS_URL;
+  const auth = process.env.NESTS_AUTH;
+  if (!base || !auth) return "Live network data is not configured. Use search_library, chain_registry or web search.";
+  if (!(i.nest in NESTS)) return `Unknown nest. Choose one of: ${Object.keys(NESTS).join(", ")}.`;
+  let path: string;
+  if (i.action === "tables") path = "/tables";
+  else if (i.action === "schema") path = "/schema";
+  else if (i.action === "status") path = "/";
+  else if (i.action === "sql") {
+    const q = (i.sql ?? "").trim();
+    if (!/^(select|with)\b/i.test(q)) return "Only SELECT or WITH queries.";
+    path = `/sql?q=${encodeURIComponent(q)}&max_rows=200`;
+  } else return "action must be status, tables, schema or sql.";
+  const r = await fetch(`${base}/${i.nest}${path}`, {
+    headers: { authorization: `Basic ${Buffer.from(auth).toString("base64")}`, "user-agent": "ask-graphy" },
+    signal: AbortSignal.timeout(30_000),
+  }).catch((e: Error) => e);
+  if (r instanceof Error) return `Nest request failed: ${r.message}`;
+  const text = await r.text();
+  if (!r.ok) return `HTTP ${r.status} from the ${i.nest} nest: ${clip(text, 2000)}`;
+  return clip(`${i.nest} nest (${NESTS[i.nest]}), polled every 15 minutes:\n${text}`, 14_000);
+}
+
 // --- definitions ---
 
 const str = { type: "string" } as const;
@@ -240,7 +276,27 @@ export const CLIENT_TOOLS: Anthropic.Beta.BetaTool[] = [
   },
 ];
 
+CLIENT_TOOLS.push({
+  name: "query_network_nest",
+  description:
+    "Live, citable data about The Graph network from self-hosted nuthatch nests that index the protocol contracts, refreshed every 15 minutes. Use for current allocations, POIs, provisions, curation signal, subgraph publications, DIPS agreements, data service registrations, REO/QoS data or GRT supply. Start with action 'tables' or 'schema' to learn the nest's tables, then 'sql' with a read-only SELECT (DataFusion SQL, 200 rows max). 'status' gives the last indexed block. Nests: " +
+    Object.entries(NESTS).map(([k, v]) => `${k} (${v})`).join("; ") +
+    ". Results carry an as_of watermark; quote it.",
+  strict: true,
+  input_schema: {
+    type: "object",
+    properties: {
+      nest: { type: "string", enum: Object.keys(NESTS) },
+      action: { type: "string", enum: ["status", "tables", "schema", "sql"] },
+      sql: { type: ["string", "null"] },
+    },
+    required: ["nest", "action", "sql"],
+    additionalProperties: false,
+  },
+});
+
 export const TOOL_LABEL: Record<string, string> = {
+  query_network_nest: "reading live network data",
   search_library: "searching the library",
   read_library_doc: "reading the docs",
   read_github_file: "reading source code",
@@ -279,6 +335,8 @@ export async function runTool(name: string, input: Record<string, unknown>): Pro
         return { text: await listReleases({ repo: s("repo") }), error: false };
       case "chain_registry":
         return { text: await chainRegistry({ chain: s("chain") }), error: false };
+      case "query_network_nest":
+        return { text: await queryNest({ nest: s("nest"), action: s("action"), sql: nn(input.sql as string | null) }), error: false };
       case "indexer_status":
         return { text: await indexerStatus({ status_url: s("status_url"), deployments: (input.deployments as string[]) ?? [] }), error: false };
       default:
