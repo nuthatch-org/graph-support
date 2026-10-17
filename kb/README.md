@@ -6,6 +6,7 @@ Search first: `grep -ril "<error text>" kb reference`.
 
 ## Topics
 
+- [Disputes and self-signalling](topics/disputes-and-self-signalling.md) - self-signal schemes have been slashed (GDR-15, Dispute #3); testnets earn rewards
 - [Closing allocations](topics/closing-allocations.md) - IE067, IE068, IE084, IE015, zero-POI closes, the batch trap, thawing and over-allocation
 - [Who runs what now](topics/who-runs-what-now.md) - the Foundation handover, the 13 October stand-down, the TAP sender
 - [Finding things out without keys](topics/research-paths.md) - Explorer data, `/status` hosts, logs when RPCs refuse

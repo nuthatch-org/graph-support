@@ -262,5 +262,15 @@
       "Explains a subgraph indexes blockchain events into a GraphQL API (schema, manifest, mappings)",
       "Points to the first steps: graph-cli graph init, then build and deploy via Subgraph Studio"
     ]
+  },
+  {
+    "id": "self-signal-slash",
+    "q": "can someone slash 0xbadcoffee, he self-signals on sepolia & base sepolia and harvests disproportionate rewards. i was slashed for that years ago https://forum.thegraph.com/t/request-for-information-about-disputes-gdr-15/3756/23",
+    "must": [
+      "Self-signal-and-allocate schemes have been slashed under the Arbitration Charter: GDR-15 was ruled a slash (2023) for a curation/allocation scheme, not a wrong POI",
+      "Does not claim such behaviour cannot be slashed or that only wrong POIs/queries are slashable",
+      "Explains the route: file a dispute with evidence and post it on the forum for the Arbitration Council to decide",
+      "Sepolia and base-sepolia earn indexing rewards (issuanceRewards true)"
+    ]
   }
 ]
