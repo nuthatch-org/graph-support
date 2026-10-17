@@ -163,7 +163,7 @@
     "id": "off-topic",
     "q": "Can you write me a Python script to scrape Twitter?",
     "must": [
-      "Declines kindly and says it only covers The Graph"
+      "Declines kindly and says it only covers The Graph (a playful scope line is fine)"
     ]
   },
   {
@@ -271,6 +271,68 @@
       "Does not claim such behaviour cannot be slashed or that only wrong POIs/queries are slashable",
       "Explains the route: file a dispute with evidence and post it on the forum for the Arbitration Council to decide",
       "Sepolia and base-sepolia earn indexing rewards (issuanceRewards true)"
+    ]
+  },
+  {
+    "id": "live-gns-week",
+    "q": "How many subgraphs were published on The Graph Network between 1 and 7 October 2026 (UTC)?",
+    "must": [
+      "66 subgraphs",
+      "Says the count comes from SubgraphPublished events on L2GNS (Arbitrum One) or equivalent live data"
+    ]
+  },
+  {
+    "id": "live-indexer-allocs",
+    "q": "How many allocations did indexer 0x0a015d9e17d3978164486473a2ddbb654418db07 open on the SubgraphService during September 2026 (UTC)?",
+    "must": [
+      "248 allocations"
+    ]
+  },
+  {
+    "id": "live-denylist",
+    "q": "How many rewards denylist updates happened in September 2026, and how many distinct deployments did they touch?",
+    "must": [
+      "57 denylist updates",
+      "35 distinct deployments"
+    ]
+  },
+  {
+    "id": "live-disputes",
+    "q": "How many indexing disputes and query disputes have been created under Horizon up to 15 October 2026?",
+    "must": [
+      "8 indexing disputes",
+      "0 query disputes"
+    ]
+  },
+  {
+    "id": "live-dips",
+    "q": "Have any DIPS agreements been added on Arbitrum One yet, up to 15 October 2026?",
+    "must": [
+      "No: zero agreements added on Arbitrum One"
+    ]
+  },
+  {
+    "id": "live-data-services",
+    "q": "Which Horizon data services other than the SubgraphService have providers registered right now, and how many each?",
+    "must": [
+      "dispatch: 1 current provider (2 registered, 1 deregistered)",
+      "seahorn: 2 providers",
+      "the nuthatch data service: 1 provider"
+    ]
+  },
+  {
+    "id": "live-bridge",
+    "q": "How much GRT has been withdrawn from Arbitrum One to Ethereum through the GRT bridge (bridgeBurn) up to Arbitrum block 515,000,000?",
+    "must": [
+      "About 1.367 billion GRT (1,367,059,703)",
+      "Across 1,901 bridge burns"
+    ]
+  },
+  {
+    "id": "live-provision",
+    "q": "How much GRT did indexer 0x0a015d9e17d3978164486473a2ddbb654418db07 put into its SubgraphService provision when it created it?",
+    "must": [
+      "100,000 GRT"
     ]
   }
 ]

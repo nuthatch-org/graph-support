@@ -207,6 +207,45 @@ async function queryNest(i: { nest: string; action: string; sql?: string }) {
   return clip(`${i.nest} nest (${NESTS[i.nest]}), polled every 15 minutes:\n${text}`, 14_000);
 }
 
+// --- deployment ids: bytes32 on chain, base58 Qm… everywhere else ---
+
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+function toQm(hex: string) {
+  let n = BigInt("0x1220" + hex.replace(/^0x/, "").padStart(64, "0"));
+  let out = "";
+  while (n > 0n) {
+    out = B58[Number(n % 58n)] + out;
+    n /= 58n;
+  }
+  return out;
+}
+
+function fromQm(qm: string) {
+  let n = 0n;
+  for (const c of qm) {
+    const i = B58.indexOf(c);
+    if (i < 0) throw new Error(`not base58: ${c}`);
+    n = n * 58n + BigInt(i);
+  }
+  const hex = n.toString(16).padStart(68, "0");
+  if (!hex.startsWith("1220")) throw new Error("not a sha2-256 multihash");
+  return "0x" + hex.slice(4);
+}
+
+function convertIds(ids: string[]) {
+  return ids
+    .slice(0, 50)
+    .map((id) => {
+      try {
+        return /^Qm/.test(id) ? `${id} -> ${fromQm(id)}` : /^(0x)?[0-9a-fA-F]{64}$/.test(id) ? `${id} -> ${toQm(id)}` : `${id} -> not a deployment id`;
+      } catch (e) {
+        return `${id} -> ${(e as Error).message}`;
+      }
+    })
+    .join("\n");
+}
+
 // --- definitions ---
 
 const str = { type: "string" } as const;
@@ -281,7 +320,7 @@ CLIENT_TOOLS.push({
   description:
     "Live, citable data about The Graph network from self-hosted nuthatch nests that index the protocol contracts, refreshed every 15 minutes. Use for current allocations, POIs, provisions, curation signal, subgraph publications, DIPS agreements, data service registrations, REO/QoS data or GRT supply. Start with action 'tables' or 'schema' to learn the nest's tables, then 'sql' with a read-only SELECT (DataFusion SQL, 200 rows max). 'status' gives the last indexed block. Nests: " +
     Object.entries(NESTS).map(([k, v]) => `${k} (${v})`).join("; ") +
-    ". Results carry an as_of watermark; quote it.",
+    ". Most event tables have block_timestamp (unix seconds): use it for any time window and show dates in UTC, never estimate time from block numbers. Deployment ids are bytes32 hex; convert them with convert_deployment_ids before showing them. Results carry an as_of watermark; quote it.",
   strict: true,
   input_schema: {
     type: "object",
@@ -295,7 +334,16 @@ CLIENT_TOOLS.push({
   },
 });
 
+CLIENT_TOOLS.push({
+  name: "convert_deployment_ids",
+  description:
+    "Convert subgraph deployment ids between the bytes32 hex form used on chain and in the nests (0x…) and the Qm… IPFS hash people use in Explorer, Studio and graph-node. Up to 50 at once. Always show people the Qm… form.",
+  strict: true,
+  input_schema: { type: "object", properties: { ids: { type: "array", items: { type: "string" } } }, required: ["ids"], additionalProperties: false },
+});
+
 export const TOOL_LABEL: Record<string, string> = {
+  convert_deployment_ids: "converting deployment ids",
   query_network_nest: "reading live network data",
   search_library: "searching the library",
   read_library_doc: "reading the docs",
@@ -335,6 +383,8 @@ export async function runTool(name: string, input: Record<string, unknown>): Pro
         return { text: await listReleases({ repo: s("repo") }), error: false };
       case "chain_registry":
         return { text: await chainRegistry({ chain: s("chain") }), error: false };
+      case "convert_deployment_ids":
+        return { text: convertIds((input.ids as string[]) ?? []), error: false };
       case "query_network_nest":
         return { text: await queryNest({ nest: s("nest"), action: s("action"), sql: nn(input.sql as string | null) }), error: false };
       case "indexer_status":
