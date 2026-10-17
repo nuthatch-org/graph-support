@@ -4,7 +4,7 @@ import "./globals.css";
 const description = "An astronaut hedgehog who answers questions about The Graph: subgraphs, indexers, the gateway, TAP and rewards.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ask-graphy.vercel.app"),
+  metadataBase: new URL("https://askgraphy.com"),
   title: "Ask Graphy",
   description,
   openGraph: { title: "Ask Graphy", description, url: "/", siteName: "Ask Graphy", type: "website" },
