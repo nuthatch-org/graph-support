@@ -26,6 +26,6 @@ Everything in `kb/` and `reference/` ships inside ask-graphy's prompt, which is 
 `ask-graphy/` is the public Q&A bot over this knowledge base (Next.js on Vercel, Claude Sonnet 5.5 on the house key, Upstash for rate limits and a 4.50 USD daily budget under a 150 USD monthly ceiling). Visitors can bring their own Anthropic key to skip the limits and choose Sonnet 5.5 or Opus 5.5.
 
 - `kb/` and `reference/` are in its prompt. Everything else is a searchable library built by `scripts/build-library.mjs` from shallow clones: the Graph docs, graph-node, indexer and indexer-rs docs, the Academy, and the Horizon, gateway, subgraph and substreams skills. Add a source there.
-- Its tools (`lib/tools.ts`) read GitHub source, list releases, look up the networks registry and query an indexer's `/status`.
+- Its tools (`lib/tools.ts`) read GitHub source, list releases, look up the networks registry, query an indexer's `/status`, and run SQL on seven live Graph nests (allocations, GNS, DIPS, data services, QoS/REO, GRT supply) polled every 15 minutes, through the `graph-data.89.167.109.4.sslip.io` vhost on Helsinki (basic auth, user `graphy`, credentials only in Vercel and `.env.local`).
 - `eval/` holds 32 questions with must-have points. `node eval/run.mjs <label>` against a local `next dev` on 3918 grades every answer; run it before and after any prompt, tool or library change.
 - Deploys are prebuilt from `ask-graphy/`: `vercel build --prod && vercel deploy --prebuilt --prod`. The build clones private nuthatch-org repos through `gh`.
