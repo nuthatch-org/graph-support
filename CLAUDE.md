@@ -9,6 +9,15 @@ Private since the 13 October 2026 stand-down. It is now Chief's insider knowledg
 3. Source checkouts live beside this repo: `~/Projects/indexer` (indexer-agent and CLI), graph-node worktrees, `~/Projects/kittiwake`. Cite `file:line` for anything read from source and say which commit.
 4. Lead with the answer and the exact command. If it goes out under Chief's name, it goes through `petko-voice`.
 5. Our own services (Lodestar, Kittiwake, Foghorn, the stopgap subgraphs) are off. Don't point anyone at them.
+6. Hand the reply over in one copyable code block, in this shape: no opener, the answer first, short plain paragraphs, then this line verbatim (the raw Discord IDs make the mentions ping when pasted), then the sign-off:
+
+   ```
+   If you found this useful consider pinging <@210266148581670913>  <@751920325968789514>  <@223433382409797632>  <@900064080163901482>  to nudge the foundation to support my work so that I can keep helping people like you.
+
+   💜 Good luck!
+   ```
+
+   The model reply is the NEAR one in `kb/topics/near-subgraph-not-indexed.md`'s case (2026-10-21).
 
 ## Keeping it
 
