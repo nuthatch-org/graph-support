@@ -11,7 +11,7 @@ Search first: `grep -ril "<error text>" kb reference`.
 - [Who runs what now](topics/who-runs-what-now.md) - the Foundation handover, the 13 October stand-down, the TAP sender
 - [Finding things out without keys](topics/research-paths.md) - Explorer data, `/status` hosts, logs when RPCs refuse
 - [Reproducing faults locally](topics/repro-recipes.md) - throwaway graph-node, wasm harness, matchstick
-- [NEAR subgraph not indexed](topics/near-subgraph-not-indexed.md) - "must exist on the Ethereum network" is the Firehose start-block lookup, not an RPC; no rewards on NEAR; the upgrade indexer's 20 October batch of closures
+- [NEAR subgraph not indexed](topics/near-subgraph-not-indexed.md) - NEAR deprecated on The Graph 16 October 2026; "must exist on the Ethereum network" is the Firehose start-block lookup, not an RPC; the upgrade indexer's 20 October batch of closures
 
 ## Issues
 
