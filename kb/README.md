@@ -6,11 +6,12 @@ Search first: `grep -ril "<error text>" kb reference`.
 
 ## Topics
 
-- [Disputes and self-signalling](topics/disputes-and-self-signalling.md) - self-signal schemes have been slashed (GDR-15, Dispute #3); testnets earn rewards
+- [Disputes and self-signalling](topics/disputes-and-self-signalling.md) - self-signal schemes have been slashed (GDR-15, Dispute #3); testnets earn rewards; how to check it in the alloc nest; the October 2026 Sepolia case
 - [Closing allocations](topics/closing-allocations.md) - IE067, IE068, IE084, IE015, zero-POI closes, the batch trap, thawing and over-allocation
 - [Who runs what now](topics/who-runs-what-now.md) - the Foundation handover, the 13 October stand-down, the TAP sender
 - [Finding things out without keys](topics/research-paths.md) - Explorer data, `/status` hosts, logs when RPCs refuse
 - [Reproducing faults locally](topics/repro-recipes.md) - throwaway graph-node, wasm harness, matchstick
+- [NEAR subgraph not indexed](topics/near-subgraph-not-indexed.md) - "must exist on the Ethereum network" is the Firehose start-block lookup, not an RPC; no rewards on NEAR; the upgrade indexer's 20 October batch of closures
 
 ## Issues
 
