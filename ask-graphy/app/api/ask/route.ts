@@ -1,3 +1,4 @@
+import { preflight, withCors } from "@/lib/cors";
 import Anthropic from "@anthropic-ai/sdk";
 import { KB } from "@/lib/kb.generated";
 import { PERSONA } from "@/lib/prompt";
@@ -55,7 +56,7 @@ function reply(status: number, v: string, code?: "rate" | "key" | "full") {
   });
 }
 
-export async function POST(req: Request) {
+async function handle(req: Request): Promise<Response> {
   if (!redis && process.env.NODE_ENV === "production") {
     return reply(503, "Graphy's mission control is not wired up yet.");
   }
@@ -245,4 +246,12 @@ export async function POST(req: Request) {
   });
 
   return new Response(stream, { headers: { "content-type": "application/x-ndjson", "cache-control": "no-store" } });
+}
+
+export async function POST(req: Request) {
+  return withCors(req, await handle(req));
+}
+
+export function OPTIONS(req: Request) {
+  return preflight(req);
 }

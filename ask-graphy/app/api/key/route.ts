@@ -1,3 +1,4 @@
+import { preflight, withCors } from "@/lib/cors";
 import Anthropic from "@anthropic-ai/sdk";
 import { checkByoRate } from "@/lib/limits";
 import { ANTHROPIC_MODELS, listModels, providerFor } from "@/lib/providers";
@@ -7,7 +8,7 @@ export const runtime = "nodejs";
 const NAMES = { anthropic: "Claude", openai: "ChatGPT", xai: "Grok" };
 
 // Checks a visitor's key with a free model listing, and returns the models it can use. Nothing is stored.
-export async function POST(req: Request) {
+async function handle(req: Request): Promise<Response> {
   const key = (req.headers.get("x-user-key") ?? req.headers.get("x-anthropic-key"))?.trim() || "";
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const fail = (message: string) => Response.json({ ok: false, message });
@@ -42,4 +43,12 @@ export async function POST(req: Request) {
   } catch {
     return fail(`Couldn't reach ${NAMES[provider]} to check the key. Try again.`);
   }
+}
+
+export async function POST(req: Request) {
+  return withCors(req, await handle(req));
+}
+
+export function OPTIONS(req: Request) {
+  return preflight(req);
 }
