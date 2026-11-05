@@ -12,6 +12,7 @@ Search first: `grep -ril "<error text>" kb reference`.
 - [Finding things out without keys](topics/research-paths.md) - Explorer data, `/status` hosts, logs when RPCs refuse
 - [Reproducing faults locally](topics/repro-recipes.md) - throwaway graph-node, wasm harness, matchstick
 - [NEAR subgraph not indexed](topics/near-subgraph-not-indexed.md) - NEAR deprecated on The Graph 16 October 2026; "must exist on the Ethereum network" is the Firehose start-block lookup, not an RPC; the upgrade indexer's 20 October batch of closures
+- [Catalog-only primary](topics/catalog-only-primary.md) - "primary" is hardcoded; move subgraphs out with graphman copy, move the chain cache, then pg_dump the now-small primary to a new host; tested end to end, unsynced sources copy fine
 
 ## Issues
 
