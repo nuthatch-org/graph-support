@@ -13,6 +13,7 @@ Search first: `grep -ril "<error text>" kb reference`.
 - [Reproducing faults locally](topics/repro-recipes.md) - throwaway graph-node, wasm harness, matchstick
 - [NEAR subgraph not indexed](topics/near-subgraph-not-indexed.md) - NEAR deprecated on The Graph 16 October 2026; "must exist on the Ethereum network" is the Firehose start-block lookup, not an RPC; the upgrade indexer's 20 October batch of closures
 - [Catalog-only primary](topics/catalog-only-primary.md) - "primary" is hardcoded; move subgraphs out with graphman copy, move the chain cache, then pg_dump the now-small primary to a new host; tested end to end, unsynced sources copy fine
+- [REO eligibility, stake and zero-200 indexers](topics/reo-eligibility-and-zero-200s.md) - resolve the oracle through RewardsManager (0x8ec2… is retired and says yes to all); the step schedule to 8 Dec; stake is provision + delegation capped 16x, thawing out; gateway routing but zero 200s is indexer-service, not the #44 deny
 
 ## Issues
 

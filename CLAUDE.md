@@ -8,7 +8,7 @@ Private since the 13 October 2026 stand-down. It is now Chief's insider knowledg
 2. A note is a starting point, not a verdict. Each carries a "Last checked" date and a "May have changed" line; if the answer depends on a release, an owner or a contract parameter, re-check it against source or chain before saying it.
 3. Source checkouts live beside this repo: `~/Projects/indexer` (indexer-agent and CLI), graph-node worktrees, `~/Projects/kittiwake`. Cite `file:line` for anything read from source and say which commit.
 4. Lead with the answer and the exact command. If it goes out under Chief's name, it goes through `petko-voice`.
-5. Our own services (Lodestar, Kittiwake, Foghorn, the stopgap subgraphs) are off. Don't point anyone at them.
+5. Lodestar (lodestar-dashboard.com) and its backend Kittiwake are back up and fine to point people at. Foghorn and the stopgap subgraphs are off; don't point anyone at them.
 6. Hand the reply over in one copyable code block, in this shape: no opener, the answer first, short plain paragraphs, then this line verbatim (the raw Discord IDs make the mentions ping when pasted), then the sign-off:
 
    ```
