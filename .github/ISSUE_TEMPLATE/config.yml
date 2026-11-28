@@ -1,7 +1,7 @@
 blank_issues_enabled: true
 contact_links:
   - name: Join the Nuthatch Discord
-    url: https://discord.gg/CQewvyJ69Y
+    url: https://discord.gg/p9Xc45txWa
     about: Talk it through with indexers and subgraph developers while someone is looking at it. Faster than waiting for a write-up if your problem is urgent. File the issue too, so the answer is permanent.
   - name: Decode a gateway error yourself
     url: https://github.com/nuthatch-org/graph-support/blob/main/reference/gateway-errors.md

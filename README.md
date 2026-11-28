@@ -23,7 +23,7 @@ layer of web3. We are not Edge & Node, we are not The Graph Foundation, and we h
 authority over either. We are operators and engineers who use this network every day and
 got tired of watching questions go unanswered.
 
-### 👉 [Join the Nuthatch Discord](https://discord.gg/CQewvyJ69Y)
+### 👉 [Join the Nuthatch Discord](https://discord.gg/p9Xc45txWa)
 
 File the issue here so the answer is permanent and searchable. Come to the Discord if you
 want to talk it through while someone is actually looking at it, if your problem is
@@ -97,7 +97,7 @@ names your address, you are the fastest path to an answer and we would rather ha
 than our guess.
 
 The people doing the answering coordinate in the
-[Nuthatch Discord](https://discord.gg/CQewvyJ69Y). If you know things about this
+[Nuthatch Discord](https://discord.gg/p9Xc45txWa). If you know things about this
 ecosystem that are not written down anywhere, which is most of what anybody knows, that is
 where to come and be useful. The answer still belongs here afterwards, where it can be
 found again.
